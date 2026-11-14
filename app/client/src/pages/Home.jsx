@@ -3,6 +3,8 @@ import { Avatar, Box, Heading, HStack, Image, Stack, Text, SimpleGrid } from '@c
 import { backend } from '../lib/backend.js'
 import SearchBar from '../components/ui/SearchBar.jsx'
 import {FoodCard} from '../components/FoodCard.jsx'
+import { Link } from 'react-router-dom';
+
 
 export default function Home() {
   const [recipes, setRecipes] = useState([])
@@ -47,7 +49,7 @@ export default function Home() {
 
           <SimpleGrid columns={2} templateColumns="repeat(2, 150px)" columnGap="24px" rowGap="20px" align='center'>
             {recipes.map((recipe) => (
-              <FoodCard key={recipe.id} recipe={recipe}/>
+              <Link to={`/recipe/${recipe.id}`}></Link><FoodCard key={recipe.id} recipe={recipe}/></Link>
             ))}
           </SimpleGrid>
         </Box>
