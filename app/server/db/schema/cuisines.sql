@@ -1,0 +1,4 @@
+CREATE TABLE cuisines (
+  id    SERIAL PRIMARY KEY,
+  name  TEXT   NOT NULL UNIQUE
+);

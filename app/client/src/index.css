@@ -1,0 +1,3 @@
+@layer theme, chakra-reset, chakra-base, chakra-tokens, chakra-recipes, base, components, utilities;
+
+@import 'tailwindcss';
