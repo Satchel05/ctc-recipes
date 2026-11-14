@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
-import { Box, Heading, Image, Stack, Text } from '@chakra-ui/react'
+import { Avatar, Box, Heading, HStack, Image, Stack, Text, SimpleGrid } from '@chakra-ui/react'
 import { backend } from '../lib/backend.js'
+import SearchBar from '../components/ui/SearchBar.jsx'
+import {FoodCard} from '../components/FoodCard.jsx'
 
 export default function Home() {
   const [recipes, setRecipes] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     const fetchRecipes = async () => {
@@ -26,19 +29,28 @@ export default function Home() {
   if (error) return <Text>Error: {error}</Text>
 
   return (
-    <Box p='4' textAlign='center'>
-      <Heading mb='4'>Recipes</Heading>
+    <Box px='16px' py='38px'>
+      <Stack gap='20px'>
+        <HStack display='flex' gap='17px' align-items='center' justify-content='center'>
+          <Avatar.Root>
+            <Avatar.Fallback name='Petr'/>
+          </Avatar.Root>
+          <Heading font-family = 'Inter' size='32px' font-weight='400'>Hello, {' '}
+            <Text as='span' color='#114240' font-weight= '700'>Petr</Text>
+          </Heading>
+        </HStack>
+        <SearchBar value={search} onChange={setSearch} />
+        <Box textAlign='left'>
+          <Heading mb='4' color='#114240' font-size='24px' font-family='Inter' font-weight='600'>
+            Recipes For You
+          </Heading>
 
-      <Stack gap='4' align='center'>
-        {recipes.map((recipe) => (
-          <Box key={recipe.id}>
-            <Image src={recipe.image_url} alt={recipe.title} width='100px' mx='auto' />
-            <Text>{recipe.title}</Text>
-            <Text>
-              {recipe.cuisine.name} · {recipe.prep_minutes + recipe.cook_minutes} min
-            </Text>
-          </Box>
-        ))}
+          <SimpleGrid columns={2} templateColumns="repeat(2, 150px)" columnGap="24px" rowGap="20px" align='center'>
+            {recipes.map((recipe) => (
+              <FoodCard key={recipe.id} recipe={recipe}/>
+            ))}
+          </SimpleGrid>
+        </Box>
       </Stack>
     </Box>
   )

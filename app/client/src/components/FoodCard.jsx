@@ -32,6 +32,7 @@ export const FoodCard = ({ recipe, onSelect, isFavorite, onToggleFavorite }) => 
       overflow="hidden"
       fontFamily="'Inter', sans-serif"
       textAlign="left"
+      boxShadow="0 4px 12px rgba(0, 0, 0, 0.1)"
     >
       <Image
         src={image_url}
