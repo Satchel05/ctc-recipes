@@ -1,69 +1,60 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { Box, Heading, Input, Text } from '@chakra-ui/react'
+import { backend } from '../lib/backend.js'
 import CuisineCarousel from '../components/CuisineCarousel.jsx'
 import DishCarousel from '../components/DishCarousel.jsx'
-import './Home.css'
-
-const recipes = [
-  {
-    id: 1,
-    title: 'Shrimp Chili Udon',
-    description:
-      'Plump, tender shrimp tossed with chewy wheat udon noodles in a bold, savory chili sauce.',
-    image_url: 'https://placehold.co/300x300?text=Shrimp+Chili+Udon',
-    cuisine: 'Japanese',
-    difficulty: 'Easy',
-    rating: 4.6,
-    prep_minutes: 10,
-    cook_minutes: 20,
-    sections: ['trending'],
-  },
-  {
-    id: 2,
-    title: 'Gyudon',
-    description:
-      'Steamed white rice topped with thinly sliced beef and onions in a sweet umami broth.',
-    image_url: 'https://placehold.co/300x300?text=Gyudon',
-    cuisine: 'Japanese',
-    difficulty: 'Easy',
-    rating: 4.7,
-    prep_minutes: 10,
-    cook_minutes: 15,
-    sections: ['trending', 'quick'],
-  },
-  {
-    id: 3,
-    title: 'Yakisoba',
-    description:
-      'Stir-fried noodles with pork and vegetables coated in a sweet-and-savory sauce.',
-    image_url: 'https://placehold.co/300x300?text=Yakisoba',
-    cuisine: 'Japanese',
-    difficulty: 'Easy',
-    rating: 4.7,
-    prep_minutes: 10,
-    cook_minutes: 15,
-    sections: ['quick', 'trending'],
-  },
-  {
-    id: 4,
-    title: 'Onigiri',
-    description:
-      'Rice balls made from steamed short-grain rice, wrapped in a strip of nori.',
-    image_url: 'https://placehold.co/300x300?text=Onigiri',
-    cuisine: 'Japanese',
-    difficulty: 'Easy',
-    rating: 4.7,
-    prep_minutes: 15,
-    cook_minutes: 10,
-    sections: ['quick'],
-  },
-]
 
 export default function Home() {
-  const [selectedCuisine, setSelectedCuisine] = useState('Japanese')
+  const [recipes, setRecipes] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  const [selectedCuisine, setSelectedCuisine] = useState('All')
   const [search, setSearch] = useState('')
 
+  useEffect(() => {
+    let active = true
+
+    const fetchRecipes = async () => {
+      try {
+        const res = await backend.get('/api/recipes')
+
+        if (active) {
+          setRecipes(res.data)
+        }
+      } catch (err) {
+        if (active) {
+          setError(err.message)
+        }
+      } finally {
+        if (active) {
+          setLoading(false)
+        }
+      }
+    }
+
+    fetchRecipes()
+
+    return () => {
+      active = false
+    }
+  }, [])
+
+  // Build cuisine choices from the recipes returned by the backend.
+  const cuisines = [
+    'All',
+    ...new Set(
+      recipes
+        .map((recipe) => recipe.cuisine?.name)
+        .filter(Boolean)
+    ),
+  ]
+
   const filteredRecipes = recipes.filter((recipe) => {
-    const matchesCuisine = recipe.cuisine === selectedCuisine
+    const matchesCuisine =
+      selectedCuisine === 'All' ||
+      recipe.cuisine?.name === selectedCuisine
+
     const matchesSearch = recipe.title
       .toLowerCase()
       .includes(search.trim().toLowerCase())
@@ -71,41 +62,115 @@ export default function Home() {
     return matchesCuisine && matchesSearch
   })
 
-  const trendingRecipes = filteredRecipes.filter((recipe) =>
-    recipe.sections.includes('trending')
-  )
+  // Group the visible recipes by their actual backend category.
+  const recipesByCategory = filteredRecipes.reduce((groups, recipe) => {
+    const categoryName = recipe.category?.name || 'Other recipes'
 
-  const quickRecipes = filteredRecipes.filter((recipe) =>
-    recipe.sections.includes('quick')
-  )
+    if (!groups[categoryName]) {
+      groups[categoryName] = []
+    }
+
+    groups[categoryName].push(recipe)
+    return groups
+  }, Object.create(null))
 
   return (
-    <main className="home-page">
-      <header className="home-header">
-        <input
-          className="recipe-search"
+    <Box
+      as="main"
+      width="100%"
+      maxWidth="402px"
+      minHeight="100vh"
+      marginX="auto"
+      paddingBottom="32px"
+      background="white"
+      color="#292929"
+      fontFamily={'Georgia, "Times New Roman", serif'}
+    >
+      <Box
+        as="header"
+        padding="58px 16px 0"
+        background="linear-gradient(#c9e1f1, #ffffff)"
+      >
+        <Input
           type="search"
           aria-label="Search recipes"
           placeholder="What would you like to cook?"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
+          disabled={loading || Boolean(error)}
+          display="block"
+          width="100%"
+          height="auto"
+          minHeight="46px"
+          padding="15px 18px"
+          border="none"
+          borderRadius="28px"
+          background="#fffbc2"
+          color="#292929"
+          fontFamily="inherit"
+          fontSize="12px"
+          lineHeight="1.4"
+          _placeholder={{ color: '#555' }}
+          _focusVisible={{
+            outline: '2px solid #b84c00',
+            outlineOffset: '2px',
+          }}
         />
 
         <CuisineCarousel
+          cuisines={cuisines}
           selectedCuisine={selectedCuisine}
           onSelect={setSelectedCuisine}
         />
-      </header>
+      </Box>
 
-      <section className="recipe-section" aria-labelledby="trending-title">
-        <h2 id="trending-title">Trending:</h2>
-        <DishCarousel recipes={trendingRecipes} />
-      </section>
+      {loading && (
+        <Text padding="16px" role="status">
+          Loading recipes...
+        </Text>
+      )}
 
-      <section className="recipe-section" aria-labelledby="quick-title">
-        <h2 id="quick-title">Quick &amp; Easy:</h2>
-        <DishCarousel recipes={quickRecipes} />
-      </section>
-    </main>
+      {error && (
+        <Text padding="16px" color="red.600" role="alert">
+          Could not load recipes: {error}
+        </Text>
+      )}
+
+      {!loading && !error && filteredRecipes.length === 0 && (
+        <Text padding="16px" color="#666">
+          {recipes.length === 0
+            ? 'No recipes are available yet.'
+            : 'No recipes match your search and cuisine.'}
+        </Text>
+      )}
+
+      {!loading &&
+        !error &&
+        Object.entries(recipesByCategory).map(
+          ([categoryName, categoryRecipes], index) => (
+            <Box
+              as="section"
+              key={categoryName}
+              marginTop={index === 0 ? '12px' : '28px'}
+              aria-labelledby={`recipe-category-${index}`}
+            >
+              <Heading
+                as="h2"
+                id={`recipe-category-${index}`}
+                margin="0 16px 20px"
+                fontFamily="inherit"
+                fontSize="23px"
+                fontWeight="normal"
+                lineHeight="1.3"
+                letterSpacing="normal"
+              >
+                {categoryName}:
+              </Heading>
+
+              <DishCarousel recipes={categoryRecipes} />
+            </Box>
+          )
+        )}
+    </Box>
   )
 }
